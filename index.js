@@ -38,12 +38,18 @@ function getHotelsFromSuppliers(suppliers, callback) {
             included_suppliers.push(parseInt(suppliers[i].toLowerCase().replace("supplier", "")) - 1)
         }
     } else {
-        // get from all suppliers
-        included_suppliers = [0, 1, 2]
+        // get from all suppliers, as long as there are suppliers
+        if (supplier_res.length)
+            included_suppliers = [...Array(supplier_res.length).keys()]
     }
     let done_api_call_count = 0;
     // query all included suppliers
     for (let i = 0; i < included_suppliers.length; i++) {
+        if (!supplier_res[included_suppliers[i]]) {
+            done_api_call_count++;
+            continue;
+        }
+
         https.get(supplier_res[included_suppliers[i]], function (supp_res) {
             let body = '';
             supp_res.on('data', (d) => {
@@ -77,6 +83,10 @@ function getHotelsFromSuppliers(suppliers, callback) {
         }).on('error', (e) => {
             console.error(e);
         });
+    }
+    // if specified suppliers do not exist, return empty list
+    if (done_api_call_count === included_suppliers.length) {
+        callback([])
     }
 }
 
